@@ -11,10 +11,8 @@
 #include <module.h>
 
 /**
- * @brief Controls the electromagnetic break by sending Pulse-Width-Modulated (PWM) currents through the break.
- *
- * This module sends digital or analog signals that trigger Field-Effect-Transistor (FET) gated relay hardware to
- * deliver voltage that variably engages the break.
+ * @brief Controls the electromagnetic break by sending digital or analog Pulse-Width-Modulated (PWM) currents through
+ * the break.
  *
  * @tparam kPin the analog pin connected to the break FET-gated relay.
  * @tparam kNormallyEngaged determines whether the break is engaged (active) or disengaged (inactive) when unpowered.
@@ -26,13 +24,12 @@ class BreakModule final : public Module
         // Ensures that the output pin does not interfere with the LED pin.
         static_assert(
             kPin != LED_BUILTIN,
-            "LED-connected pin is reserved for LED manipulation. Select a different pin for the BreakModule instance."
+            "The LED-connected pin is reserved for LED manipulation. Select a different pin for the BreakModule "
+            "instance."
         );
 
     public:
-        /**
-         * @brief Defines the codes used by each module instance to communicate its runtime state to the PC.
-         */
+        /// Defines the codes used by each module instance to communicate its runtime state to the PC.
         enum class kCustomStatusCodes : uint8_t
         {
             kEngaged    = 52,  ///< The break is engaged at maximum possible strength.
@@ -40,9 +37,7 @@ class BreakModule final : public Module
             kVariable   = 54,  ///< The break is engaged at the specified non-maximal strength.
         };
 
-        /**
-         * @brief Defines the codes for the commands supported by the module's instance.
-         */
+        /// Defines the codes for the commands supported by the module's instance.
         enum class kModuleCommands : uint8_t
         {
             kToggleOn         = 1,  ///< Engages the break at maximum strength.
@@ -55,9 +50,7 @@ class BreakModule final : public Module
             Module(module_type, module_id, communication)
         {}
 
-        /**
-         * @brief Overwrites the module's runtime parameters structure with the data received from the PC.
-         */
+        /// Overwrites the module's runtime parameters structure with the data received from the PC.
         bool SetCustomParameters() override
         {
             if (_communication.ExtractModuleParameters(_custom_parameters))
@@ -72,11 +65,7 @@ class BreakModule final : public Module
             return false;  // Returns false if the parameter extraction fails
         }
 
-        /**
-         * @brief Resolves and executes the currently active command.
-         *
-         * @return bool true of the module has recognized the currently active command and false otherwise.
-         */
+        /// Resolves and executes the currently active command.
         bool RunActiveCommand() override
         {
             // Depending on the currently active command, executes the necessary logic.
@@ -93,11 +82,7 @@ class BreakModule final : public Module
             }
         }
 
-        /**
-         * @brief Sets the module instance's software and hardware parameters to the default values.
-         *
-         * @return true for all expected runtime scenarios.
-         */
+        /// Sets the module instance's software and hardware parameters to the default values.
         bool SetupModule() override
         {
             // Sets pin mode to OUTPUT
@@ -145,7 +130,7 @@ class BreakModule final : public Module
             CompleteCommand();
         }
 
-        /// Disengages the break
+        /// Disengages the break.
         void DisableBreak()
         {
             digitalWriteFast(kPin, kDisengage);
