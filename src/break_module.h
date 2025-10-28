@@ -1,13 +1,6 @@
 /**
  * @file
- * @brief The header-only file for the BreakModule class. This class allows interfacing with a break to dynamically
- * control the motion of break-coupled objects.
- *
- * @section brk_mod_dependencies Dependencies:
- * - Arduino.h for Arduino platform functions and macros and cross-compatibility with Arduino IDE (to an extent).
- * - digitalWriteFast.h for fast digital pin manipulation methods.
- * - module.h for the shared Module class API access (integrates the custom module into runtime flow).
- * - shared_assets.h for globally shared static message byte-codes and parameter structures.
+ * @brief Provides the BreakModule class that controls an electromagnetic break module.
  */
 
 #ifndef AXMC_BREAK_MODULE_H
@@ -15,76 +8,75 @@
 
 #include <Arduino.h>
 #include <digitalWriteFast.h>
-#include <axmc_shared_assets.h>
 #include <module.h>
 
 /**
- * @brief Sends Pulse-Width-Modulated (PWM) signals to variably engage the managed break.
+ * @brief Controls the electromagnetic break by sending Pulse-Width-Modulated (PWM) currents through the break.
  *
- * This module is specifically designed to send PWM signals that trigger Field-Effect-Transistor (FET) gated relay
- * hardware to deliver voltage that variably engages the break. Depending on configuration, this module is designed to
- * work with both Normally Engaged (NE) and Normally Disengaged (ND) breaks.
+ * This module sends digital or analog signals that trigger Field-Effect-Transistor (FET) gated relay hardware to
+ * deliver voltage that variably engages the break.
  *
- * @tparam kPin the analog pin connected to the break FET-gated relay. Depending on the active command, the pin will be
- * used to output either digital or analog PWM signal to engage the break.
- * @tparam kNormallyEngaged determines whether the managed break is engaged (active) or disengaged (inactive) when
- * unpowered. This is used to adjust the class behavior so that toggle OFF always means the break is disabled and
- * toggle ON means the break is engaged at maximum strength.
- * @tparam kStartEngaged determines the initial state of the break during class initialization. This works
- * together with kNormallyEngaged parameter to deliver the desired initial voltage level for the break to either be
- * maximally engaged or completely disengaged after hardware configuration.
+ * @tparam kPin the analog pin connected to the break FET-gated relay.
+ * @tparam kNormallyEngaged determines whether the break is engaged (active) or disengaged (inactive) when unpowered.
+ * @tparam kStartEngaged determines the initial state of the break during class initialization.
  */
 template <const uint8_t kPin, const bool kNormallyEngaged, const bool kStartEngaged = true>
 class BreakModule final : public Module
 {
-        // Ensures that the output pin does not interfere with LED pin.
+        // Ensures that the output pin does not interfere with the LED pin.
         static_assert(
             kPin != LED_BUILTIN,
-            "LED-connected pin is reserved for LED manipulation. Select a different pin for BreakModule instance."
+            "LED-connected pin is reserved for LED manipulation. Select a different pin for the BreakModule instance."
         );
 
     public:
-        /// Assigns meaningful names to byte status-codes used to communicate module events to the PC. Note,
-        /// this enumeration has to use codes 51 through 255 to avoid interfering with shared kCoreStatusCodes
-        /// enumeration inherited from base Module class.
+        /**
+         * @brief Defines the codes used by each module instance to communicate its runtime state to the PC.
+         */
         enum class kCustomStatusCodes : uint8_t
         {
-            kOutputLocked = 51,  ///< The break pin is in a global locked state and cannot be used to output signals.
-            kEngaged      = 52,  ///< The break is maximally engaged.
-            kDisengaged   = 53,  ///< The break is completely disengaged.
-            kVariable     = 54,  ///< The break is engaged with variable strength.
+            kEngaged    = 52,  ///< The break is engaged at maximum possible strength.
+            kDisengaged = 53,  ///< The break is disengaged.
+            kVariable   = 54,  ///< The break is engaged at the specified non-maximal strength.
         };
 
-        /// Assigns meaningful names to module command byte-codes.
+        /**
+         * @brief Defines the codes for the commands supported by the module's instance.
+         */
         enum class kModuleCommands : uint8_t
         {
-            kToggleOn  = 1,  ///< Sets the break to permanently engage at maximum strength.
-            kToggleOff = 2,  ///< Sets the break to permanently disengage.
-            kSetBreakingPower =
-                3,  ///< Sets the break to engage with the strength determined by breaking_strength parameter.
+            kToggleOn         = 1,  ///< Engages the break at maximum strength.
+            kToggleOff        = 2,  ///< Disengages the break.
+            kSetBreakingPower = 3,  ///< Sets the break to engage at the requested breaking strength.
         };
 
-        /// Initializes the class by subclassing the base Module class.
-        BreakModule(
-            const uint8_t module_type,
-            const uint8_t module_id,
-            Communication& communication,
-            const axmc_shared_assets::DynamicRuntimeParameters& dynamic_parameters
-        ) :
-            Module(module_type, module_id, communication, dynamic_parameters)
+        /// Initializes the base Module class.
+        BreakModule(const uint8_t module_type, const uint8_t module_id, Communication& communication) :
+            Module(module_type, module_id, communication)
         {}
 
-        /// Overwrites the custom_parameters structure memory with the data extracted from the Communication
-        /// reception buffer.
+        /**
+         * @brief Overwrites the module's runtime parameters structure with the data received from the PC.
+         */
         bool SetCustomParameters() override
         {
-            // Extracts the received parameters into the _custom_parameters structure of the class. If extraction fails,
-            // returns false. This instructs the Kernel to execute the necessary steps to send an error message to the
-            // PC.
-            return _communication.ExtractModuleParameters(_custom_parameters);
+            if (_communication.ExtractModuleParameters(_custom_parameters))
+            {
+                // Adjusts the PWM value to account for whether the break is normally engaged. This ensures that the
+                // strength of 255 means the break is fully engaged.
+                uint8_t value = _custom_parameters.breaking_strength;
+                if (kNormallyEngaged) value = 255 - value;
+                _custom_parameters.breaking_strength = value;
+                return true;  // Extraction (and adjustment) succeeded.
+            }
+            return false;  // Returns false if the parameter extraction fails
         }
 
-        /// Executes the currently active command.
+        /**
+         * @brief Resolves and executes the currently active command.
+         *
+         * @return bool true of the module has recognized the currently active command and false otherwise.
+         */
         bool RunActiveCommand() override
         {
             // Depending on the currently active command, executes the necessary logic.
@@ -101,7 +93,11 @@ class BreakModule final : public Module
             }
         }
 
-        /// Sets up module hardware parameters.
+        /**
+         * @brief Sets the module instance's software and hardware parameters to the default values.
+         *
+         * @return true for all expected runtime scenarios.
+         */
         bool SetupModule() override
         {
             // Sets pin mode to OUTPUT
@@ -129,81 +125,42 @@ class BreakModule final : public Module
         ~BreakModule() override = default;
 
     private:
-        /// Stores custom addressable runtime parameters of the module.
+        /// Stores the instance's addressable runtime parameters.
         struct CustomRuntimeParameters
         {
-                uint8_t breaking_strength = 128;  ///< Determines the strength of the break when it uses the PWM mode.
+                uint8_t breaking_strength = 128;  ///< Determines the strength of the break in variable mode.
         } PACKED_STRUCT _custom_parameters;
 
-        /// Depending on the break configuration, stores the digital signal that needs to be sent to the output pin to
-        /// engage the break at maximum strength.
+        /// Stores the digital signal that needs to be sent to the output pin to engage the break at maximum strength.
         static constexpr bool kEngage = kNormallyEngaged ? LOW : HIGH;  // NOLINT(*-dynamic-static-initializers)
 
-        /// Depending on the break configuration, stores the digital signal that needs to be sent to the output pin to
-        /// disengage the break.
+        /// Stores the digital signal that needs to be sent to the output pin to disengage the break.
         static constexpr bool kDisengage = kNormallyEngaged ? HIGH : LOW;  // NOLINT(*-dynamic-static-initializers)
 
-        /// Sets the Break to be continuously engaged (enabled) by outputting the appropriate digital signal.
+        /// Engages the break at the maximum strength.
         void EnableBreak()
         {
-            // Engages the break
-            if (DigitalWrite(kPin, kEngage, false))
-            {
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kEngaged));
-                CompleteCommand();
-            }
-            else
-            {
-                // If writing to Action pins is globally disabled, as indicated by DigitalWrite returning false,
-                // sends an error message to the PC and aborts the runtime.
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputLocked));
-                AbortCommand();  // Aborts the current and all future command executions.
-            }
+            digitalWriteFast(kPin, kEngage);
+            SendData(static_cast<uint8_t>(kCustomStatusCodes::kEngaged));
+            CompleteCommand();
         }
 
-        /// Sets the Break to be continuously disengaged (disabled) by outputting the appropriate digital signal.
+        /// Disengages the break
         void DisableBreak()
         {
-            // Disengages the break
-            if (DigitalWrite(kPin, kDisengage, false))
-            {
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kDisengaged));
-                CompleteCommand();
-            }
-            else
-            {
-                // If writing to Action pins is globally disabled, as indicated by DigitalWrite returning false,
-                // sends an error message to the PC and aborts the runtime.
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputLocked));
-                AbortCommand();  // Aborts the current and all future command executions.
-            }
+            digitalWriteFast(kPin, kDisengage);
+            SendData(static_cast<uint8_t>(kCustomStatusCodes::kDisengaged));
+            CompleteCommand();
         }
 
-        /// Flexibly sets the breaking power by sending a square wave pulse with a certain PWM duty-cycle.
+        /// Engages the break at the specified strength level.
         void SetBreakingPower()
         {
-            // Resolves the PWM value depending on whether the break is normally engaged (powered on when input current
-            // is LOW) or not (powered on when input current is HIGH).
-            uint8_t value = _custom_parameters.breaking_strength;  // Initial PWM is determined by break_strength.
-
-            // Normally engaged break strength is inversely proportional to PWM value. This ensures that a PWM of 255
-            // means the break is fully engaged regardless of whether it is NE or ND.
-            if (kNormallyEngaged) value = 255 - value;
-
             // Uses AnalogWrite to make the pin output a square wave pulse with the desired duty cycle (PWM). This
             // results in the breaks being applied a certain proportion of time, producing the desired breaking power.
-            if (AnalogWrite(kPin, value, false))
-            {
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kVariable));
-                CompleteCommand();
-            }
-            else
-            {
-                // If writing to Action pins is globally disabled, as indicated by AnalogWrite returning false,
-                // sends an error message to the PC and aborts the runtime.
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputLocked));
-                AbortCommand();  // Aborts the current and all future command executions.
-            }
+            analogWrite(kPin, _custom_parameters.breaking_strengthl);
+            SendData(static_cast<uint8_t>(kCustomStatusCodes::kVariable));
+            CompleteCommand();
         }
 };
 
