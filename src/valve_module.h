@@ -14,7 +14,6 @@
 #define AXMC_VALVE_MODULE_H
 
 #include <Arduino.h>
-#include <axmc_shared_assets.h>
 #include <digitalWriteFast.h>
 #include <module.h>
 

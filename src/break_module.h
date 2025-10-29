@@ -1,6 +1,7 @@
 /**
  * @file
- * @brief Provides the BreakModule class that controls an electromagnetic break module.
+ *
+ * @brief Provides the BreakModule class that controls an electromagnetic particle break.
  */
 
 #ifndef AXMC_BREAK_MODULE_H
@@ -14,7 +15,7 @@
  * @brief Controls the electromagnetic break by sending digital or analog Pulse-Width-Modulated (PWM) currents through
  * the break.
  *
- * @tparam kPin the analog pin connected to the break FET-gated relay.
+ * @tparam kPin the analog pin connected to the logic terminal of the managed break's FET-gated power relay.
  * @tparam kNormallyEngaged determines whether the break is engaged (active) or disengaged (inactive) when unpowered.
  * @tparam kStartEngaged determines the initial state of the break during class initialization.
  */
@@ -32,9 +33,9 @@ class BreakModule final : public Module
         /// Defines the codes used by each module instance to communicate its runtime state to the PC.
         enum class kCustomStatusCodes : uint8_t
         {
-            kEngaged    = 52,  ///< The break is engaged at maximum possible strength.
-            kDisengaged = 53,  ///< The break is disengaged.
-            kVariable   = 54,  ///< The break is engaged at the specified non-maximal strength.
+            kEngaged    = 51,  ///< The break is engaged at maximum possible strength.
+            kDisengaged = 52,  ///< The break is disengaged.
+            kVariable   = 53,  ///< The break is engaged at the specified non-maximal strength.
         };
 
         /// Defines the codes for the commands supported by the module's instance.

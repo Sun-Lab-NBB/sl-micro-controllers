@@ -1,5 +1,6 @@
 /**
  * @file
+ *
  * @brief Provides the EncoderModule class that monitors and records the data produced by a quadrature encoder.
  *
  * @warning This file is written in a way that is @b NOT compatible with any other library or class that uses
@@ -16,7 +17,6 @@
 
 #include <Arduino.h>
 #include <Encoder.h>
-#include <axmc_shared_assets.h>
 #include <module.h>
 
 /**
