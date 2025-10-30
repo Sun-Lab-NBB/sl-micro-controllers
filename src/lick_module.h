@@ -102,7 +102,7 @@ class LickModule final : public Module
             static uint16_t previous_readout = 0;
 
             // Tracks whether the previous message sent to the PC included a zero-signal value.
-            static bool previous_zero = false;
+            static bool previous_zero = true;  // A zero-message is sent at class initialization.
 
             // Reads the current voltage level across the sensor's circuitry.
             const uint16_t signal = AnalogRead(kPin, _custom_parameters.average_pool_size);

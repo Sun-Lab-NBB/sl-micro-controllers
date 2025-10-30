@@ -1,31 +1,31 @@
 /**
  * @file
  *
- * @brief Provides the BreakModule class that controls an electromagnetic particle break.
+ * @brief Provides the BrakeModule class that controls an electromagnetic particle brake.
  */
 
-#ifndef AXMC_BREAK_MODULE_H
-#define AXMC_BREAK_MODULE_H
+#ifndef AXMC_BRAKE_MODULE_H
+#define AXMC_BRAKE_MODULE_H
 
 #include <Arduino.h>
 #include <digitalWriteFast.h>
 #include <module.h>
 
 /**
- * @brief Controls the electromagnetic break by sending digital or analog Pulse-Width-Modulated (PWM) currents through
- * the break.
+ * @brief Controls the electromagnetic brake by sending digital or analog Pulse-Width-Modulated (PWM) currents through
+ * the brake.
  *
- * @tparam kPin the analog pin connected to the logic terminal of the managed break's FET-gated power relay.
- * @tparam kNormallyEngaged determines whether the break is engaged (active) or disengaged (inactive) when unpowered.
- * @tparam kStartEngaged determines the initial state of the break during class initialization.
+ * @tparam kPin the analog pin connected to the logic terminal of the managed brake's FET-gated power relay.
+ * @tparam kNormallyEngaged determines whether the brake is engaged (active) or disengaged (inactive) when unpowered.
+ * @tparam kStartEngaged determines the initial state of the brake during class initialization.
  */
 template <const uint8_t kPin, const bool kNormallyEngaged, const bool kStartEngaged = true>
-class BreakModule final : public Module
+class BrakeModule final : public Module
 {
         // Ensures that the output pin does not interfere with the LED pin.
         static_assert(
             kPin != LED_BUILTIN,
-            "The LED-connected pin is reserved for LED manipulation. Select a different pin for the BreakModule "
+            "The LED-connected pin is reserved for LED manipulation. Select a different pin for the BrakeModule "
             "instance."
         );
 
@@ -33,21 +33,21 @@ class BreakModule final : public Module
         /// Defines the codes used by each module instance to communicate its runtime state to the PC.
         enum class kCustomStatusCodes : uint8_t
         {
-            kEngaged    = 51,  ///< The break is engaged at maximum possible strength.
-            kDisengaged = 52,  ///< The break is disengaged.
-            kVariable   = 53,  ///< The break is engaged at the specified non-maximal strength.
+            kEngaged    = 51,  ///< The brake is engaged at maximum possible strength.
+            kDisengaged = 52,  ///< The brake is disengaged.
+            kVariable   = 53,  ///< The brake is engaged at the specified non-maximal strength.
         };
 
         /// Defines the codes for the commands supported by the module's instance.
         enum class kModuleCommands : uint8_t
         {
-            kToggleOn         = 1,  ///< Engages the break at maximum strength.
-            kToggleOff        = 2,  ///< Disengages the break.
-            kSetBreakingPower = 3,  ///< Sets the break to engage at the requested breaking strength.
+            kToggleOn        = 1,  ///< Engages the brake at maximum strength.
+            kToggleOff       = 2,  ///< Disengages the brake.
+            kSetBrakingPower = 3,  ///< Sets the brake to engage at the requested braking strength.
         };
 
         /// Initializes the base Module class.
-        BreakModule(const uint8_t module_type, const uint8_t module_id, Communication& communication) :
+        BrakeModule(const uint8_t module_type, const uint8_t module_id, Communication& communication) :
             Module(module_type, module_id, communication)
         {}
 
@@ -56,11 +56,11 @@ class BreakModule final : public Module
         {
             if (_communication.ExtractModuleParameters(_custom_parameters))
             {
-                // Adjusts the PWM value to account for whether the break is normally engaged. This ensures that the
-                // strength of 255 means the break is fully engaged.
-                uint8_t value = _custom_parameters.breaking_strength;
+                // Adjusts the PWM value to account for whether the brake is normally engaged. This ensures that the
+                // strength of 255 means the brake is fully engaged.
+                uint8_t value = _custom_parameters.braking_strength;
                 if (kNormallyEngaged) value = 255 - value;
-                _custom_parameters.breaking_strength = value;
+                _custom_parameters.braking_strength = value;
                 return true;  // Extraction (and adjustment) succeeded.
             }
             return false;  // Returns false if the parameter extraction fails
@@ -72,12 +72,12 @@ class BreakModule final : public Module
             // Depending on the currently active command, executes the necessary logic.
             switch (static_cast<kModuleCommands>(GetActiveCommand()))
             {
-                // EnableBreak
-                case kModuleCommands::kToggleOn: EnableBreak(); return true;
-                // DisableBreak
-                case kModuleCommands::kToggleOff: DisableBreak(); return true;
-                // SetBreakingPower
-                case kModuleCommands::kSetBreakingPower: SetBreakingPower(); return true;
+                // EnableBrake
+                case kModuleCommands::kToggleOn: EnableBrake(); return true;
+                // DisableBrake
+                case kModuleCommands::kToggleOff: DisableBrake(); return true;
+                // SetBrakingPower
+                case kModuleCommands::kSetBrakingPower: SetBrakingPower(); return true;
                 // Unrecognized command
                 default: return false;
             }
@@ -89,65 +89,65 @@ class BreakModule final : public Module
             // Sets pin mode to OUTPUT
             pinModeFast(kPin, OUTPUT);
 
-            // Based on the requested initial break state and the configuration of the break (normally engaged or not),
-            // either engages or disengages the breaks following setup.
+            // Based on the requested initial brake state and the configuration of the brake (normally engaged or not),
+            // either engages or disengages the brake following setup.
             if (kStartEngaged)
             {
-                digitalWriteFast(kPin, kEngage);  // Ensures the break is engaged.
+                digitalWriteFast(kPin, kEngage);  // Ensures the brake is engaged.
                 SendData(static_cast<uint8_t>(kCustomStatusCodes::kEngaged));
             }
             else
             {
-                digitalWriteFast(kPin, kDisengage);  // Ensures the break is disengaged.
+                digitalWriteFast(kPin, kDisengage);  // Ensures the brake is disengaged.
                 SendData(static_cast<uint8_t>(kCustomStatusCodes::kDisengaged));
             }
 
             // Resets the custom_parameters structure fields to their default values.
-            _custom_parameters.breaking_strength = 128;  //  50% breaking strength
+            _custom_parameters.braking_strength = 128;  //  50% braking strength
 
             return true;
         }
 
-        ~BreakModule() override = default;
+        ~BrakeModule() override = default;
 
     private:
         /// Stores the instance's addressable runtime parameters.
         struct CustomRuntimeParameters
         {
-                uint8_t breaking_strength = 128;  ///< Determines the strength of the break in variable mode.
+                uint8_t braking_strength = 128;  ///< Determines the strength of the brake in variable mode.
         } PACKED_STRUCT _custom_parameters;
 
-        /// Stores the digital signal that needs to be sent to the output pin to engage the break at maximum strength.
+        /// Stores the digital signal that needs to be sent to the output pin to engage the brake at maximum strength.
         static constexpr bool kEngage = kNormallyEngaged ? LOW : HIGH;  // NOLINT(*-dynamic-static-initializers)
 
-        /// Stores the digital signal that needs to be sent to the output pin to disengage the break.
+        /// Stores the digital signal that needs to be sent to the output pin to disengage the brake.
         static constexpr bool kDisengage = kNormallyEngaged ? HIGH : LOW;  // NOLINT(*-dynamic-static-initializers)
 
-        /// Engages the break at the maximum strength.
-        void EnableBreak()
+        /// Engages the brake at the maximum strength.
+        void EnableBrake()
         {
             digitalWriteFast(kPin, kEngage);
             SendData(static_cast<uint8_t>(kCustomStatusCodes::kEngaged));
             CompleteCommand();
         }
 
-        /// Disengages the break.
-        void DisableBreak()
+        /// Disengages the brake.
+        void DisableBrake()
         {
             digitalWriteFast(kPin, kDisengage);
             SendData(static_cast<uint8_t>(kCustomStatusCodes::kDisengaged));
             CompleteCommand();
         }
 
-        /// Engages the break at the specified strength level.
-        void SetBreakingPower()
+        /// Engages the brake at the specified strength level.
+        void SetBrakingPower()
         {
             // Uses AnalogWrite to make the pin output a square wave pulse with the desired duty cycle (PWM). This
-            // results in the breaks being applied a certain proportion of time, producing the desired breaking power.
-            analogWrite(kPin, _custom_parameters.breaking_strengthl);
+            // results in the brake being applied a certain proportion of time, producing the desired braking power.
+            analogWrite(kPin, _custom_parameters.braking_strength);
             SendData(static_cast<uint8_t>(kCustomStatusCodes::kVariable));
             CompleteCommand();
         }
 };
 
-#endif  //AXMC_BREAK_MODULE_H
+#endif  //AXMC_BRAKE_MODULE_H
