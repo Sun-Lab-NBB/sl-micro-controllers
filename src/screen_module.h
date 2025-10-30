@@ -157,7 +157,7 @@ class ScreenModule final : public Module
                     CompleteCommand();
                     return;
 
-                default: CompleteCommand();
+                default: AbortCommand();
             }
         }
 };
