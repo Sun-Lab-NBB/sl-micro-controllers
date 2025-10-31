@@ -1,10 +1,10 @@
 .. This file provides the instructions for how to display the API documentation generated using doxygen-breathe-sphinx
 .. pipeline.
 
-Break Module
+Brake Module
 ============
 
-.. doxygenfile:: break_module.h
+.. doxygenfile:: brake_module.h
    :project: sl-micro-controllers
 
 Encoder Module
