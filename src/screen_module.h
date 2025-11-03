@@ -16,35 +16,19 @@
  * @brief Switches the screen power state by sending digital currents to the FET gate that shorts the power board's
  * button terminals.
  *
- * @tparam kLeftScreenPin the digital pin connected to the logic terminal of the left VR screen's power board FET gate.
- * @tparam kCenterScreenPin the digital pin connected to the logic terminal of the center VR screen's power board FET
- * gate.
- * @tparam kRightScreenPin the digital pin connected to the logic terminal of the right VR screen's power board FET
- * gate.
+ * @tparam kPin the digital pin connected to the logic terminals of the VR screen's power board FET gates.
  * @tparam kNormallyClosed determines whether the FET relays used to control the screens' power are closed
  * (On / conducting) or opened (Off / not conducting) when unpowered.
  */
 template <
-    const uint8_t kLeftScreenPin,
-    const uint8_t kCenterScreenPin,
-    const uint8_t kRightScreenPin,
+    const uint8_t kPin,
     const bool kNormallyClosed = false>
 class ScreenModule final : public Module
 {
         static_assert(
-            kLeftScreenPin != LED_BUILTIN,
-            "The LED-connected pin is reserved for LED manipulation. Select a different Left screen pin for "
-            "the ScreenModule instance."
-        );
-        static_assert(
-            kCenterScreenPin != LED_BUILTIN,
-            "The LED-connected pin is reserved for LED manipulation. Select a different Center screen pin for "
-            "the ScreenModule instance."
-        );
-        static_assert(
-            kRightScreenPin != LED_BUILTIN,
-            "The LED-connected pin is reserved for LED manipulation. Select a different Right screen pin for "
-            "the ScreenModule instance."
+            kPin != LED_BUILTIN,
+            "The LED-connected pin is reserved for LED manipulation. Select a different pin for the ScreenModule "
+            "instance."
         );
 
     public:
@@ -89,15 +73,11 @@ class ScreenModule final : public Module
         /// Sets the module instance's software and hardware parameters to the default values.
         bool SetupModule() override
         {
-            // Sets the control pins to output mode.
-            pinModeFast(kLeftScreenPin, OUTPUT);
-            pinModeFast(kCenterScreenPin, OUTPUT);
-            pinModeFast(kRightScreenPin, OUTPUT);
+            // Sets the control pin to output mode.
+            pinModeFast(kPin, OUTPUT);
 
             // Ensures the logic gates are disabled at startup
-            digitalWriteFast(kLeftScreenPin, kOff);
-            digitalWriteFast(kCenterScreenPin, kOff);
-            digitalWriteFast(kRightScreenPin, kOff);
+            digitalWriteFast(kPin, kOff);
 
             // Notifies the PC about the initial state of the FET gates.
             SendData(static_cast<uint8_t>(kCustomStatusCodes::kOff));
@@ -133,9 +113,7 @@ class ScreenModule final : public Module
             {
                 // Simulates pressing the screens' power button
                 case 1:
-                    digitalWriteFast(kLeftScreenPin, kOn);
-                    digitalWriteFast(kCenterScreenPin, kOn);
-                    digitalWriteFast(kRightScreenPin, kOn);
+                    digitalWriteFast(kPin, kOn);
                     SendData(static_cast<uint8_t>(kCustomStatusCodes::kOn));
                     AdvanceCommandStage();
                     return;
@@ -149,10 +127,7 @@ class ScreenModule final : public Module
 
                 // Simulates releasing the screens' power button
                 case 3:
-                    // Sets all screen pins to the OFF state
-                    digitalWriteFast(kLeftScreenPin, kOff);
-                    digitalWriteFast(kCenterScreenPin, kOff);
-                    digitalWriteFast(kRightScreenPin, kOff);
+                    digitalWriteFast(kPin, kOff);
                     SendData(static_cast<uint8_t>(kCustomStatusCodes::kOff));
                     CompleteCommand();
                     return;

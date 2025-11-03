@@ -15,7 +15,7 @@ modules used by data acquisition systems developed in the Sun lab. This project 
 to work with the hardware made and used in the lab, and will likely not work in other contexts without extensive
 modification.
 
-Note, the rest of this ReadMe assumes familiarity with the procedures, experiments, and tools used in the Sun lab
+Note; the rest of this ReadMe assumes familiarity with the procedures, experiments, and tools used in the Sun lab
 to acquire scientific data. See our [publications](https://neuroai.github.io/sunlab/publications) before reading
 further, if you are not familiar with the work done in the lab.
 
@@ -104,14 +104,14 @@ ___
 ## API Documentation
 
 See the [API documentation](https://sl-micro-controllers-api-docs.netlify.app/) for the detailed description of
-the methods and classes exposed by components of this library.
+the methods and classes exposed by this library.
 
 ___
 
 ## Versioning
 
-This project uses [semantic versioning](https://semver.org/). For the versions available, see the
-[tags on this repository](https://github.com/Sun-Lab-NBB/sl-micro-controllers/tags).
+This project uses [semantic versioning](https://semver.org/). See the
+[tags on this repository](https://github.com/Sun-Lab-NBB/sl-micro-controllers/tags) for the available project releases.
 
 ---
 
@@ -129,9 +129,8 @@ This project is licensed under the GPL3 License: see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- All [Sun Lab](https://neuroai.github.io/sunlab/) members for providing the inspiration and comments during the
+- All Sun lab [members](https://neuroai.github.io/sunlab/people) for providing the inspiration and comments during the
   development of this library.
-- The creators of all other projects used in our development automation pipelines [see tox.ini](tox.ini) and in our
-  source code [see platformio.ini](platformio.ini).
+- The creators of all other dependencies and projects listed in the [platformio.ini](platformio.ini) file.
 
 ---

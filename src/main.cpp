@@ -19,7 +19,7 @@
 Communication axmc_communication(Serial);  // NOLINT(*-interfaces-global-init)
 
 // Defines the target microcontroller. Our VR system currently has 3 valid targets: ACTOR, SENSOR and ENCODER.
-#define ENCODER
+#define SENSOR
 
 // Resolves microcontroller-specific module configuration and layout
 #ifdef ACTOR
@@ -28,9 +28,9 @@ Communication axmc_communication(Serial);  // NOLINT(*-interfaces-global-init)
 #include "valve_module.h"
 
 constexpr uint8_t kControllerID = 101;
-BrakeModule<28, false, true> wheel_brake(3, 1, axmc_communication);
-ValveModule<29, true, true, 9> reward_valve(5, 1, axmc_communication);
-ScreenModule<15, 19, 23, true> screen_trigger(7, 1, axmc_communication);
+BrakeModule<33, false, true> wheel_brake(3, 1, axmc_communication);
+ValveModule<35, true, true, 34> reward_valve(5, 1, axmc_communication);
+ScreenModule<36, true> screen_trigger(7, 1, axmc_communication);
 Module* modules[] = {&wheel_brake, &reward_valve, &screen_trigger};
 
 #elif defined SENSOR
@@ -40,8 +40,8 @@ Module* modules[] = {&wheel_brake, &reward_valve, &screen_trigger};
 
 constexpr uint8_t kControllerID = 152;
 TTLModule<34, false, false> mesoscope_frame(1, 1, axmc_communication);
-LickModule<21> lick_sensor(4, 1, axmc_communication);
-TorqueModule<41, 2048, true> torque_sensor(6, 1, axmc_communication);
+LickModule<41> lick_sensor(4, 1, axmc_communication);
+TorqueModule<40, 2048, true> torque_sensor(6, 1, axmc_communication);
 Module* modules[] = {&mesoscope_frame, &lick_sensor, &torque_sensor};
 
 #elif defined ENCODER
