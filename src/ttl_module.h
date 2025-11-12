@@ -35,11 +35,11 @@ class TTLModule final : public Module
         /// Defines the codes used by each module instance to communicate its runtime state to the PC.
         enum class kCustomStatusCodes : uint8_t
         {
-            kInputOn        = 52,  ///< The input ttl pin is receiving a HIGH signal.
-            kInputOff       = 53,  ///< The input ttl pin is receiving a LOW signal.
-            kInvalidPinMode = 54,  ///< The instance's pin mode is not valid for the requested command.
-            kOutputOn       = 55,  ///< The output ttl pin is set to HIGH.
-            kOutputOff      = 56,  ///< The output ttl pin is set to LOW.
+            kInputOn        = 51,  ///< The input ttl pin is receiving a HIGH signal.
+            kInputOff       = 52,  ///< The input ttl pin is receiving a LOW signal.
+            kInvalidPinMode = 53,  ///< The instance's pin mode is not valid for the requested command.
+            kOutputOn       = 54,  ///< The output ttl pin is set to HIGH.
+            kOutputOff      = 55,  ///< The output ttl pin is set to LOW.
         };
 
         /// Defines the codes for the commands supported by the module's instance.

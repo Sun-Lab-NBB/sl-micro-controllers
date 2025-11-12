@@ -19,7 +19,7 @@
 Communication axmc_communication(Serial);  // NOLINT(*-interfaces-global-init)
 
 // Defines the target microcontroller. Our VR system currently has 3 valid targets: ACTOR, SENSOR and ENCODER.
-#define SENSOR
+#define ACTOR
 
 // Resolves microcontroller-specific module configuration and layout
 #ifdef ACTOR

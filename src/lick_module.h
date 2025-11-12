@@ -32,7 +32,7 @@ class LickModule final : public Module
         /// Defines the codes used by each module instance to communicate its runtime state to the PC.
         enum class kCustomStatusCodes : uint8_t
         {
-            kChanged = 51,  /// The sensor has experienced a significant change in the conducted voltage level.
+            kChanged = 51,  ///< The sensor has experienced a significant change in the conducted voltage level.
         };
 
         /// Defines the codes for the commands supported by the module's instance.

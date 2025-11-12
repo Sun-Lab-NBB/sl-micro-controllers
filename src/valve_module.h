@@ -89,7 +89,7 @@ class ValveModule final : public Module
                 // If the tone buzzer is used and the tone duration exceeds the pulse duration, computes and stores the
                 // difference between the two durations.
                 if (_custom_parameters.tone_duration > _custom_parameters.pulse_duration)
-                    _tone_time_delta =  _custom_parameters.tone_duration - _custom_parameters.pulse_duration;
+                    _tone_time_delta = _custom_parameters.tone_duration - _custom_parameters.pulse_duration;
                 else _tone_time_delta = 0;  // Otherwise, caps the tone duration to the pulse duration.
                 return true;
             }
