@@ -200,6 +200,10 @@ class ValveModule final : public Module
         /// if both are used during valve pulsing.
         uint32_t _tone_time_delta = 0;
 
+        /// Tracks the number of valve calibration cycles completed as part of executing the current calibration
+        /// command.
+        uint16_t _calibration_iteration = 0;
+
         /// Opens the valve to deliver a precise volume of fluid and then closes it.
         void Pulse()
         {
@@ -273,26 +277,45 @@ class ValveModule final : public Module
         /// calibration_count repetitions without blocking or (majorly) delaying.
         void Calibrate()
         {
-            // Essentially runs the modified Pulse() command for the requested number of repetitions.
-            for (uint16_t i = 0; i < _custom_parameters.calibration_count; ++i)
+            switch (execution_parameters.stage)
             {
-                // Opens the valve
-                digitalWriteFast(kValvePin, kOpen);
+                // Resets the calibration iteration tracker
+                case 1:
+                    _calibration_iteration = 0;
+                    AdvanceCommandStage();
+                    return;
 
-                // Blocks in-place until the pulse duration passes.
-                delayMicroseconds(_custom_parameters.pulse_duration);
+                // Dispenses one reward at each cycle until the requested calibration count is dispensed
+                case 2:
+                    // Opens the valve
+                    digitalWriteFast(kValvePin, kOpen);
 
-                // Closes the valve
-                digitalWriteFast(kValvePin, kClose);
+                    // Blocks in-place until the pulse duration passes.
+                    delayMicroseconds(_custom_parameters.pulse_duration);
 
-                // Blocks for kCalibrationDelay of microseconds to ensure the valve closes before initiating the next
-                // cycle.
-                delayMicroseconds(kCalibrationDelay);
+                    // Closes the valve
+                    digitalWriteFast(kValvePin, kClose);
+
+                    // Blocks for kCalibrationDelay of microseconds to ensure the valve closes before initiating the
+                    // next cycle.
+                    delayMicroseconds(kCalibrationDelay);
+
+                    _calibration_iteration++;
+
+                    if (_calibration_iteration >= _custom_parameters.calibration_count)
+                    {
+                        AdvanceCommandStage();
+                    }
+                    return;
+
+                // Complete calibration
+                case 3:
+                    SendData(static_cast<uint8_t>(kCustomStatusCodes::kCalibrated));
+                    CompleteCommand();
+                    return;
+
+                default: AbortCommand();
             }
-
-            // This command completes after running the requested number of cycles.
-            SendData(static_cast<uint8_t>(kCustomStatusCodes::kCalibrated));
-            CompleteCommand();
         }
 
         /// Activates the tone buzzer to deliver an audible tone for the specified duration of time and then
