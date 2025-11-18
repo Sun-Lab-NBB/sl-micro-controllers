@@ -18,9 +18,6 @@
 // Initializes the serial communication class.
 Communication axmc_communication(Serial);  // NOLINT(*-interfaces-global-init)
 
-// Defines the keepalive interval used during runtime.
-static constexpr uint32_t kKeepaliveInterval = 500;  // 500 ms
-
 // Defines the target microcontroller. Our VR system currently has 3 valid targets: ACTOR, SENSOR and ENCODER.
 #define ACTOR
 
@@ -58,7 +55,7 @@ static_assert(false, "Define one of the supported microcontroller targets (ACTOR
 #endif
 
 // Instantiates the Kernel class using the assets instantiated above.
-Kernel axmc_kernel(kControllerID, axmc_communication, modules, kKeepaliveInterval);
+Kernel axmc_kernel(kControllerID, axmc_communication, modules);
 
 void setup()
 {
