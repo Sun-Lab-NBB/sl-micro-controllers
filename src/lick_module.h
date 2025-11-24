@@ -1,87 +1,58 @@
 /**
  * @file
- * @brief The header-only file for the LickModule class. This class allows interfacing with a custom conductive lick
- * sensor used to monitor the licking behavior of animals.
  *
- * This class was specifically designed to monitor the licking behavior of laboratory mice during experiments. This
- * class will likely work for other purposes that benefit from detecting wet or dry contacts, such as touch or lick
- * sensors.
- *
- * @section lck_mod_dependencies Dependencies:
- * - Arduino.h for Arduino platform functions and macros and cross-compatibility with Arduino IDE (to an extent).
- * - digitalWriteFast.h for fast digital pin manipulation methods.
- * - module.h for the shared Module class API access (integrates the custom module into runtime flow).
- * - shared_assets.h for globally shared static message byte-codes and parameter structures.
+ * @brief Provides the LickModule class that monitors and records the data produced by a conductive lick sensor.
  */
 
 #ifndef AXMC_LICK_MODULE_H
 #define AXMC_LICK_MODULE_H
 
 #include <Arduino.h>
-#include <axmc_shared_assets.h>
 #include <digitalWriteFast.h>
 #include <module.h>
 
 /**
- * @brief Monitors the state of a custom conductive lick sensor for significant state changes and notifies the PC when
- * such changes occur.
+ * @brief Monitors the voltage fluctuations measured by a conductive lick sensor to detect interactions with the
+ * sensor's circuitry.
  *
- * This module is designed to work with a custom lick sensor. The sensor works by directly injecting a small amount of
- * current through one contact surface and monitoring the pin wired to the second contact surface. When the animal,
- * such as a laboratory mouse, licks the sensor while making contact with the current injector surface, the sensor
- * detects a positive change in voltage across the sensor. The detection threshold can be configured to distinguish
- * between dry and wet touch, which is used to separate limb contacts from tongue contacts.
- *
- * @note This class was calibrated to work for and tested on C57BL6J Wild-type and transgenic mice.
- *
- * @tparam kPin the analog pin whose state will be monitored to detect licks.
+ * @tparam kPin the analog pin connected to the output terminal of the lick sensor.
  */
 template <const uint8_t kPin>
 class LickModule final : public Module
 {
-        // Ensures that the pin does not interfere with LED pin.
+        // Ensures that the pin does not interfere with the LED pin.
         static_assert(
             kPin != LED_BUILTIN,
-            "LED-connected pin is reserved for LED manipulation. Select a different pin for LickModule instance."
+            "The LED-connected pin is reserved for LED manipulation. Select a different pin for the "
+            "LickModule instance."
         );
 
     public:
 
-        /// Assigns meaningful names to byte status-codes used to communicate module events to the PC. Note,
-        /// this enumeration has to use codes 51 through 255 to avoid interfering with shared kCoreStatusCodes
-        /// enumeration inherited from base Module class.
+        /// Defines the codes used by each module instance to communicate its runtime state to the PC.
         enum class kCustomStatusCodes : uint8_t
         {
-            kChanged = 51,  /// The signal received by the monitored pin has significantly changed since the last check.
+            kChanged = 51,  ///< The sensor has experienced a significant change in the conducted voltage level.
         };
 
-        /// Assigns meaningful names to module command byte-codes.
+        /// Defines the codes for the commands supported by the module's instance.
         enum class kModuleCommands : uint8_t
         {
-            kCheckState = 1,  ///< Checks the state of the input pin, and if necessary informs the PC of any changes.
+            kCheckState = 1,  ///< Checks the voltage level across the sensor.
         };
 
-        /// Initializes the TTLModule class by subclassing the base Module class.
-        LickModule(
-            const uint8_t module_type,
-            const uint8_t module_id,
-            Communication& communication,
-            const axmc_shared_assets::DynamicRuntimeParameters& dynamic_parameters
-        ) :
-            Module(module_type, module_id, communication, dynamic_parameters)
+        /// Initializes the base Module class.
+        LickModule(const uint8_t module_type, const uint8_t module_id, Communication& communication) :
+            Module(module_type, module_id, communication)
         {}
 
-        /// Overwrites the custom_parameters structure memory with the data extracted from the Communication
-        /// reception buffer.
+        /// Overwrites the module's runtime parameters structure with the data received from the PC.
         bool SetCustomParameters() override
         {
-            // Extracts the received parameters into the _custom_parameters structure of the class. If extraction fails,
-            // returns false. This instructs the Kernel to execute the necessary steps to send an error message to the
-            // PC.
             return _communication.ExtractModuleParameters(_custom_parameters);
         }
 
-        /// Executes the currently active command.
+        /// Resolves and executes the currently active command.
         bool RunActiveCommand() override
         {
             // Depending on the currently active command, executes the necessary logic.
@@ -94,24 +65,20 @@ class LickModule final : public Module
             }
         }
 
-        /// Sets up module hardware parameters.
+        /// Sets the module instance's software and hardware parameters to the default values.
         bool SetupModule() override
         {
-            // Sets pin to Input mode.
+            // Configures the input pin. Critically, uses the pull-down mode, as the sensor is expected to spend most
+            // of its runtime in an uncompleted circuit state, so the pin must be pulled to 0.
             pinModeFast(kPin, INPUT_PULLDOWN);
 
             // Resets the custom_parameters structure fields to their default values. Assumes 12-bit ADC resolution.
-            _custom_parameters.signal_threshold  = 200;  // Ideally should be just high enough to filter out noise
-            _custom_parameters.delta_threshold   = 180;  // Ideally should be at least half of the minimal threshold
+            _custom_parameters.signal_threshold  = 300;  // Ideally should be just high enough to filter out noise
+            _custom_parameters.delta_threshold   = 300;  // Ideally should be at least half of the minimal threshold
             _custom_parameters.average_pool_size = 0;    // Better to have at 0 because Teensy already does this
 
-            // Notifies the PC about the initial sensor state. Primarily, this is needed to support data source
-            // time-alignment during post-processing.
-            SendData(
-                static_cast<uint8_t>(kCustomStatusCodes::kChanged),
-                axmc_communication_assets::kPrototypes::kOneUint16,
-                0
-            );
+            // Notifies the PC about the initial sensor state.
+            SendData(static_cast<uint8_t>(kCustomStatusCodes::kChanged), kPrototypes::kOneUint16, 0);
 
             return true;
         }
@@ -119,37 +86,28 @@ class LickModule final : public Module
         ~LickModule() override = default;
 
     private:
-        /// Stores custom addressable runtime parameters of the module.
+        /// Stores the instance's addressable runtime parameters.
         struct CustomRuntimeParameters
         {
-                uint16_t signal_threshold = 200;  ///< The lower boundary for signals to be reported to PC.
-                uint16_t delta_threshold  = 180;  ///< The minimum difference between checks to be reported to PC.
-                uint8_t average_pool_size = 0;    ///< The number of readouts to average into pin state value.
+                uint16_t signal_threshold = 300;  ///< The minimum voltage level to report to the PC.
+                uint16_t delta_threshold  = 300;  ///< The minimum change in voltage level readouts to report to the PC.
+                uint8_t average_pool_size = 0;    ///< The number of readouts to average to determine the voltage level.
         } PACKED_STRUCT _custom_parameters;
 
-        /// Checks the signal received by the input pin and, if necessary, reports it to the PC.
+        /// Checks the voltage level across the sensor's circuitry and sends it to the PC if it is significantly
+        /// different from the previous readout.
         void CheckState()
         {
-            // Stores the previous readout of the analog pin. This is used to limit the number of messages sent to the
-            // PC by only reporting significant changes of the pin state (signal). The level that constitutes
-            // significant change can be adjusted through the custom_parameters structure.
+            // Stores the previous readout of the analog pin.
             static uint16_t previous_readout = 0;
 
-            // Tracks whether the previous message sent to the PC included a zero signal value. This is used to
-            // eliminate repeated reporting of sub-threshold values pulled down to 0 to the PC. In turn, this conserves
-            // communication bandwidth
-            static bool previous_zero = false;
+            // Tracks whether the previous message sent to the PC included a zero-signal value.
+            static bool previous_zero = true;  // A zero-message is sent at class initialization.
 
-            // Evaluates the state of the pin. Averages the requested number of readouts to produce the final
-            // analog signal value. Note, since we statically configure the controller to use 10-14 bit ADC resolution,
-            // this value should not use the full range of the 16-bit uint variable.
+            // Reads the current voltage level across the sensor's circuitry.
             const uint16_t signal = AnalogRead(kPin, _custom_parameters.average_pool_size);
 
-            // Calculates the absolute difference between the current signal and the previous readout. This is used
-            // to ensure only significant signal changes are reported to the PC. Note, although we are casting both to
-            // int32 to support the delta calculation, the resultant delta will always be within the uint_16 range.
-            // Therefore, it is fine to cast it back to uint16 to avoid unnecessary future casting in the 'if'
-            // statements.
+            // Calculates the absolute difference between the current readout and the previous readout.
             const auto delta =
                 static_cast<uint16_t>(abs(static_cast<int32_t>(signal) - static_cast<int32_t>(previous_readout)));
 
@@ -165,27 +123,20 @@ class LickModule final : public Module
             // If the signal is above the threshold, sends it to the PC
             if (signal >= _custom_parameters.signal_threshold)
             {
-                // Sends the detected signal to the PC.
-                SendData(
-                    static_cast<uint8_t>(kCustomStatusCodes::kChanged),
-                    axmc_communication_assets::kPrototypes::kOneUint16,
-                    signal
-                );
+                SendData(static_cast<uint8_t>(kCustomStatusCodes::kChanged), kPrototypes::kOneUint16, signal);
                 previous_zero = false;
             }
 
-            // If the signal is below the threshold, pulls it to 0 and notifies the PC
-            else
+            // If the signal is below the threshold and the previously reported signal was not zero, pulls the signal
+            // to zero and reports it to the PC.
+            else if (!previous_zero)
             {
-                if (!previous_zero)
-                {
-                    SendData(
-                        static_cast<uint8_t>(kCustomStatusCodes::kChanged),
-                        axmc_communication_assets::kPrototypes::kOneUint16,
-                        0
-                    );
-                    previous_zero = true;
-                }
+                SendData(
+                    static_cast<uint8_t>(kCustomStatusCodes::kChanged),
+                    kPrototypes::kOneUint16,
+                    0
+                );
+                previous_zero = true;
             }
 
             // Completes command execution

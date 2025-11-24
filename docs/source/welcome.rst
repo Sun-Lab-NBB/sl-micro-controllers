@@ -1,11 +1,11 @@
 Welcome to sl-micro-controllers API documentation page
 ======================================================
 
-This project aggregates the code and documentation for all Ataraxis Micro Controllers (AXMCs) used in
+This project aggregates the code and documentation for all Ataraxis Micro Controllers (AXMCs) used in the
 `Sun (NeuroAI) lab <https://neuroai.github.io/sunlab/>`_ data acquisition pipelines. It is designed to work together
 with the main `sl-experiment library <https://github.com/Sun-Lab-NBB/sl-experiment>`_.
 
-Primarily, this project specializes the interfaces developed as part of
+Primarily, this project specializes the assets developed as part of
 `ataraxis-micro-controller <https://github.com/Sun-Lab-NBB/ataraxis-micro-controller>`_ library to manage the hardware
 used to conduct experiments in the lab.
 

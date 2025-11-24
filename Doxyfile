@@ -7,7 +7,7 @@ DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "sl-micro-controllers"
 OUTPUT_DIRECTORY       = docs/source/doxygen
 OUTPUT_LANGUAGE        = English
-INPUT                  = src/break_module.h \
+INPUT                  = src/brake_module.h \
                          src/encoder_module.h \
                          src/screen_module.h \
                          src/torque_module.h \

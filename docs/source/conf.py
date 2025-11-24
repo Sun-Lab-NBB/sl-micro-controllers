@@ -3,9 +3,9 @@
 # -- Project information -----------------------------------------------------
 project = 'sl-micro-controllers'
 # noinspection PyShadowingBuiltins
-copyright = '2025, Ivan Kondratyev (Inkaros) & Sun Lab'
-authors = ['Ivan Kondratyev (Inkaros)']
-release = '1.0.0'
+copyright = '2025, Sun (NeuroAI) lab'
+authors = ['Ivan Kondratyev']
+release = '3.0.0'
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -25,6 +25,9 @@ breathe_doxygen_config_options = {
     'MACRO_EXPANSION': 'YES',
     'EXPAND_ONLY_PREDEF': 'NO',
 }
+
+# Disables the dark mode by default.
+default_dark_mode = False
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = 'sphinx_rtd_theme'  # Directs sphinx to use RTD theme

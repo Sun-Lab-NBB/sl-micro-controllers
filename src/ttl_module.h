@@ -1,61 +1,48 @@
 /**
  * @file
  *
- * @brief The header-only file for the TTLModule class. This class allows establishing bidirectional TTL
- * communication with other hardware systems, such as microcontrollers, cameras and data recording devices.
- *
- * @section ttl_mod_dependencies Dependencies:
- * - Arduino.h for Arduino platform functions and macros and cross-compatibility with Arduino IDE (to an extent).
- * - digitalWriteFast.h for fast digital pin manipulation methods.
- * - module.h for the shared Module class API access (integrates the custom module into runtime flow).
- * - shared_assets.h for globally shared static message byte-codes and parameter structures.
+ * @brief Provides the TTLModule class that supports Transistor-to-Transistor Logic (TTL) communication with other
+ * hardware systems by sending or receiving TTL logic pulses.
  */
 
 #ifndef AXMC_TTL_MODULE_H
 #define AXMC_TTL_MODULE_H
 
 #include <Arduino.h>
-#include <axmc_shared_assets.h>
 #include <digitalWriteFast.h>
 #include <module.h>
 
 /**
  * @brief Sends or receives Transistor-to-Transistor Logic (TTL) signals using the specified digital pin.
  *
- * The class is statically configured to either receive or output TTL signals, it cannot do both at the same time!
+ * @warning Each class instance can either receive or output TTL signals, it cannot do both at the same time!
  *
- * @tparam kPin the digital pin that will be used to output or receive ttl signals. The mode of the pin (input or
- * output) depends on kOutput flag value and is currently not changeable during runtime.
- * @tparam kOutput determines whether the pin will be used to output TTL signals (if set to true) or receive TTL signals
- * from other systems (if set to false).
- * @tparam kStartOn determines the initial state of the pin when the class is configured to output TTL signals. If set
- * to true, the TTL pin will be set to High during hardware initialization. Otherwise (by default) it will be set to
- * Low. This parameter is ignored if the class is configured to receive TTL signals.
+ * @tparam kPin the digital pin used to output or receive TTL signals.
+ * @tparam kOutput determines whether the instance is used to send TTL signals (if true) or receive TTL signals
+ * (if false).
+ * @tparam kStartOn determines the initial state of the output pin when the class is configured to output TTL signals.
  */
 template <const uint8_t kPin, const bool kOutput = true, const bool kStartOn = false>
 class TTLModule final : public Module
 {
         static_assert(
             kPin != LED_BUILTIN,
-            "LED-connected pin is reserved for LED manipulation. Select a different pin for TTLModule instance."
+            "The LED-connected pin is reserved for LED manipulation. Select a different pin for the TTLModule instance."
         );
 
     public:
 
-        /// Assigns meaningful names to byte status-codes used to communicate module events to the PC. Note,
-        /// this enumeration has to use codes 51 through 255 to avoid interfering with shared kCoreStatusCodes
-        /// enumeration inherited from base Module class.
+        /// Defines the codes used by each module instance to communicate its runtime state to the PC.
         enum class kCustomStatusCodes : uint8_t
         {
-            kOutputLocked   = 51,  ///< The output ttl pin is in a global locked state and cannot be toggled on or off.
-            kInputOn        = 52,  ///< The input ttl pin is receiving a HIGH signal.
-            kInputOff       = 53,  ///< The input ttl pin is receiving a LOW signal.
-            kInvalidPinMode = 54,  ///< The pin mode (input or output) is not valid for the requested command.
-            kOutputOn       = 55,  ///< The output ttl pin is set to HIGH.
-            kOutputOff      = 56,  ///< The output ttl pin is set to LOW.
+            kInputOn        = 51,  ///< The input ttl pin is receiving a HIGH signal.
+            kInputOff       = 52,  ///< The input ttl pin is receiving a LOW signal.
+            kInvalidPinMode = 53,  ///< The instance's pin mode is not valid for the requested command.
+            kOutputOn       = 54,  ///< The output ttl pin is set to HIGH.
+            kOutputOff      = 55,  ///< The output ttl pin is set to LOW.
         };
 
-        /// Assigns meaningful names to module command byte-codes.
+        /// Defines the codes for the commands supported by the module's instance.
         enum class kModuleCommands : uint8_t
         {
             kSendPulse  = 1,  ///< Sends a ttl pulse through the output pin.
@@ -64,27 +51,18 @@ class TTLModule final : public Module
             kCheckState = 4,  ///< Checks the state of the input pin.
         };
 
-        /// Initializes the class by subclassing the base Module class.
-        TTLModule(
-            const uint8_t module_type,
-            const uint8_t module_id,
-            Communication& communication,
-            const axmc_shared_assets::DynamicRuntimeParameters& dynamic_parameters
-        ) :
-            Module(module_type, module_id, communication, dynamic_parameters)
+        /// Initializes the base Module class.
+        TTLModule(const uint8_t module_type, const uint8_t module_id, Communication& communication) :
+            Module(module_type, module_id, communication)
         {}
 
-        /// Overwrites the custom_parameters structure memory with the data extracted from the Communication
-        /// reception buffer.
+        /// Overwrites the module's runtime parameters structure with the data received from the PC.
         bool SetCustomParameters() override
         {
-            // Extracts the received parameters into the _custom_parameters structure of the class. If extraction fails,
-            // returns false. This instructs the Kernel to execute the necessary steps to send an error message to the
-            // PC.
             return _communication.ExtractModuleParameters(_custom_parameters);
         }
 
-        /// Executes the currently active command.
+        /// Resolves and executes the currently active command.
         bool RunActiveCommand() override
         {
             // Depending on the currently active command, executes the necessary logic.
@@ -103,7 +81,7 @@ class TTLModule final : public Module
             }
         }
 
-        /// Sets up module hardware parameters.
+        /// Sets the module instance's software and hardware parameters to the default values.
         bool SetupModule() override
         {
             // Depending on the output flag, configures the pin as either input or output.
@@ -127,8 +105,7 @@ class TTLModule final : public Module
             {
                 pinModeFast(kPin, INPUT);
 
-                // Notifies the PC about the initial sensor state. Primarily, this is needed to support data source
-                // time-alignment during post-processing.
+                // Notifies the PC about the initial sensor state, which is always reported as a zero-value baseline.
                 SendData(static_cast<uint8_t>(kCustomStatusCodes::kInputOff));
             }
 
@@ -142,15 +119,14 @@ class TTLModule final : public Module
         ~TTLModule() override = default;
 
     private:
-        /// Stores custom addressable runtime parameters of the module.
+        /// Stores the instance's addressable runtime parameters.
         struct CustomRuntimeParameters
         {
                 uint32_t pulse_duration   = 10000;  ///< The time, in microseconds, the pin outputs HIGH during pulses.
                 uint8_t average_pool_size = 0;  ///< The number of digital readouts to average when checking pin state.
         } PACKED_STRUCT _custom_parameters;
 
-        /// Sends a digital pulse through the output pin, using the preconfigured pulse_duration of microseconds.
-        /// Supports non-blocking execution and respects the global ttl_lock state.
+        /// Sets the output pin to HIGH for the requested pulse_duration of microseconds and then sets it LOW.
         void SendPulse()
         {
             // Calling this command when the class is configured to receive TTL pulses triggers an invalid
@@ -158,60 +134,36 @@ class TTLModule final : public Module
             if (!kOutput)
             {
                 SendData(static_cast<uint8_t>(kCustomStatusCodes::kInvalidPinMode));
-                AbortCommand();  // Aborts the current and all future command executions.
+                AbortCommand();
                 return;
             }
 
-            // Initializes the pulse
-            if (execution_parameters.stage == 1)
+            switch (execution_parameters.stage)
             {
-                // Toggles the pin to send a HIGH signal. If the pin is successfully set to HIGH, as indicated by the
-                // DigitalWrite returning true, advances the command stage.
-                if (DigitalWrite(kPin, HIGH, true))
-                {
+                // Initializes the pulse
+                case 1:
+                    digitalWriteFast(kPin, HIGH);
                     SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputOn));
                     AdvanceCommandStage();
-                }
-                else
-                {
-                    // If writing to TTL pins is globally disabled, as indicated by DigitalWrite returning false,
-                    // sends an error message to the PC and aborts the runtime.
-                    SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputLocked));
-                    AbortCommand();  // Aborts the current and all future command executions.
                     return;
-                }
-            }
 
-            // Delays for the requested number of microseconds before inactivating the pulse.
-            if (execution_parameters.stage == 2)
-            {
-                // Blocks for the pulse_duration of microseconds, relative to the time of the last AdvanceCommandStage()
-                // call.
-                if (!WaitForMicros(_custom_parameters.pulse_duration)) return;
-                AdvanceCommandStage();
-            }
+                // Delays for the requested number of microseconds.
+                case 2:
+                    if (!WaitForMicros(_custom_parameters.pulse_duration)) return;
+                    AdvanceCommandStage();
+                    return;
 
-            // Inactivates the pulse
-            if (execution_parameters.stage == 3)
-            {
-                // Once the pulse duration has passed, inactivates the pin by setting it to LOW. Finishes command
-                // execution if inactivation is successful.
-                if (DigitalWrite(kPin, LOW, true))
-                {
+                // Inactivates the pulse.
+                case 3:
+                    digitalWriteFast(kPin, LOW);
                     SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputOff));
                     CompleteCommand();
-                }
-                else
-                {
-                    // If writing to TTL pins is globally disabled, as indicated by DigitalWrite returning false,
-                    // sends an error message to the PC and aborts the runtime.
-                    SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputLocked));
-                    AbortCommand();  // Aborts the current and all future command executions.
-                }
+
+                default: AbortCommand();
             }
         }
 
-        /// Sets the output pin to continuously send HIGH signal. Respects the global ttl_lock state.
+        /// Sets the output pin to emit the HIGH signal.
         void ToggleOn()
         {
             // Calling this command when the class is configured to receive TTL pulses triggers an invalid
@@ -219,26 +171,17 @@ class TTLModule final : public Module
             if (!kOutput)
             {
                 SendData(static_cast<uint8_t>(kCustomStatusCodes::kInvalidPinMode));
-                AbortCommand();  // Aborts the current and all future command executions.
+                AbortCommand();
                 return;
             }
 
             // Sets the pin to HIGH and finishes command execution
-            if (DigitalWrite(kPin, HIGH, true))
-            {
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputOn));
-                CompleteCommand();
-            }
-            else
-            {
-                // If writing to TTL pins is globally disabled, as indicated by DigitalWrite returning false,
-                // sends an error message to the PC and aborts the runtime.
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputLocked));
-                AbortCommand();  // Aborts the current and all future command executions.
-            }
+            digitalWriteFast(kPin, HIGH);
+            SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputOn));
+            CompleteCommand();
         }
 
-        /// Sets the output pin to continuously send LOW signal. Respects the global ttl_lock state.
+        /// Sets the output pin to emit the LOW signal.
         void ToggleOff()
         {
             // Calling this command when the class is configured to receive TTL pulses triggers an invalid
@@ -246,27 +189,18 @@ class TTLModule final : public Module
             if (!kOutput)
             {
                 SendData(static_cast<uint8_t>(kCustomStatusCodes::kInvalidPinMode));
-                AbortCommand();  // Aborts the current and all future command executions.
+                AbortCommand();
                 return;
             }
 
             // Sets the pin to LOW and finishes command execution
-            if (DigitalWrite(kPin, LOW, true))
-            {
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputOff));
-                CompleteCommand();  // Finishes command execution
-            }
-            else
-            {
-                // If writing to TTL pins is globally disabled, as indicated by DigitalWrite returning false,
-                // sends an error message to the PC and aborts the runtime.
-                SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputLocked));
-                AbortCommand();  // Aborts the current and all future command executions.
-            }
+            digitalWriteFast(kPin, LOW);
+            SendData(static_cast<uint8_t>(kCustomStatusCodes::kOutputOff));
+            CompleteCommand();
         }
 
-        /// Checks the state of the input pin and, if the state does not match the previous state, sends the new state
-        /// to the PC.
+        /// Checks the state of the input pin and sends it to the PC if it is significantly different from the
+        /// previous readout.
         void CheckState()
         {
             // Tracks the previous input_pin status. This is used to optimize data transmission by only reporting input
@@ -284,8 +218,8 @@ class TTLModule final : public Module
 
             // Evaluates the state of the pin. Averages the requested number of readouts to produce the final
             // state-value. To optimize communication, only sends data to the PC if the state has changed.
-            const bool current_state = DigitalRead(kPin, _custom_parameters.average_pool_size);
-            if (previous_input_status != current_state)
+            if (const bool current_state = DigitalRead(kPin, _custom_parameters.average_pool_size);
+                previous_input_status != current_state)
             {
                 // Updates the state tracker.
                 previous_input_status = current_state;
