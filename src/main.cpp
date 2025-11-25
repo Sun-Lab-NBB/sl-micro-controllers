@@ -33,7 +33,7 @@ static constexpr uint32_t kKeepaliveInterval = 500;  // 500 ms
 constexpr uint8_t kControllerID = 101;
 BrakeModule<33, false, true> wheel_brake(3, 1, axmc_communication);
 ValveModule<35, true, true, 34> reward_valve(5, 1, axmc_communication);
-ScreenModule<36, true> screen_trigger(7, 1, axmc_communication);
+ScreenModule<36, false> screen_trigger(7, 1, axmc_communication);
 Module* modules[] = {&wheel_brake, &reward_valve, &screen_trigger};
 
 #elif defined SENSOR
