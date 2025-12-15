@@ -12,13 +12,13 @@
 #include <module.h>
 
 /**
- * @brief Dispenses precise volumes of fluid by sending digital currents through a solenoid valve and optionally emits
- * tones by sending digital currents through a piezoelectric buzzer.
+ * @brief Dispenses precise volumes of fluid or gas by sending digital currents through a solenoid valve and optionally
+ * emits tones by sending digital currents through a piezoelectric buzzer.
  *
  * @tparam kValvePin the digital pin connected to the logic terminal of the managed solenoid valve's FET-gated power
  * relay.
- * @tparam kNormallyClosed determines whether the managed solenoid valve is opened (allows the fluid to flow) or closed
- * (prevents the fluid from flowing) when unpowered.
+ * @tparam kNormallyClosed determines whether the managed solenoid valve is opened (allows the fluid or gas to flow) or
+ * closed (prevents the fluid or gas from flowing) when unpowered.
  * @tparam kStartClosed determines the initial state of the managed solenoid valve during class initialization.
  * @tparam kTonePin the digital pin connected to the logic terminal of the managed piezoelectric buzzer's FET-gated
  * power relay.
@@ -200,7 +200,7 @@ class ValveModule final : public Module
         /// if both are used during valve pulsing.
         uint32_t _tone_time_delta = 0;
 
-        /// Opens the valve to deliver a precise volume of fluid and then closes it.
+        /// Opens the valve to deliver a precise volume of fluid or gas and then closes it.
         void Pulse()
         {
             switch (execution_parameters.stage)
