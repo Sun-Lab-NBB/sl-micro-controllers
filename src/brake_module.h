@@ -44,6 +44,7 @@ class BrakeModule final : public Module
             kToggleOn        = 1,  ///< Engages the brake at maximum strength.
             kToggleOff       = 2,  ///< Disengages the brake.
             kSetBrakingPower = 3,  ///< Sets the brake to engage at the requested braking strength.
+            kSendPulse       = 4,  ///< Briefly engages the brake at maximum strength for the specified duration.
         };
 
         /// Initializes the base Module class.
@@ -78,6 +79,8 @@ class BrakeModule final : public Module
                 case kModuleCommands::kToggleOff: DisableBrake(); return true;
                 // SetBrakingPower
                 case kModuleCommands::kSetBrakingPower: SetBrakingPower(); return true;
+                // SendPulse
+                case kModuleCommands::kSendPulse: SendPulse(); return true;
                 // Unrecognized command
                 default: return false;
             }
@@ -103,7 +106,8 @@ class BrakeModule final : public Module
             }
 
             // Resets the custom_parameters structure fields to their default values.
-            _custom_parameters.braking_strength = 128;  //  50% braking strength
+            _custom_parameters.braking_strength = 128;      //  50% braking strength
+            _custom_parameters.pulse_duration   = 1000000;  // 1000000 microseconds == 1 second.
 
             return true;
         }
@@ -114,7 +118,8 @@ class BrakeModule final : public Module
         /// Stores the instance's addressable runtime parameters.
         struct CustomRuntimeParameters
         {
-                uint8_t braking_strength = 128;  ///< Determines the strength of the brake in variable mode.
+                uint8_t braking_strength = 128;      ///< Determines the strength of the brake in variable mode.
+                uint32_t pulse_duration  = 1000000;  ///< The time, in microseconds, to engage the brake during pulses.
         } PACKED_STRUCT _custom_parameters;
 
         /// Stores the digital signal that needs to be sent to the output pin to engage the brake at maximum strength.
@@ -147,6 +152,36 @@ class BrakeModule final : public Module
             analogWrite(kPin, _custom_parameters.braking_strength);
             SendData(static_cast<uint8_t>(kCustomStatusCodes::kVariable));
             CompleteCommand();
+        }
+
+        /// Engages the brake at maximum strength for the requested pulse_duration of microseconds and then
+        /// disengages it.
+        void SendPulse()
+        {
+            switch (execution_parameters.stage)
+            {
+                // Engages the brake at maximum strength.
+                case 1:
+                    digitalWriteFast(kPin, kEngage);
+                    SendData(static_cast<uint8_t>(kCustomStatusCodes::kEngaged));
+                    AdvanceCommandStage();
+                    return;
+
+                // Delays for the requested number of microseconds.
+                case 2:
+                    if (!WaitForMicros(_custom_parameters.pulse_duration)) return;
+                    AdvanceCommandStage();
+                    return;
+
+                // Disengages the brake.
+                case 3:
+                    digitalWriteFast(kPin, kDisengage);
+                    SendData(static_cast<uint8_t>(kCustomStatusCodes::kDisengaged));
+                    CompleteCommand();
+                    return;
+
+                default: AbortCommand();
+            }
         }
 };
 
