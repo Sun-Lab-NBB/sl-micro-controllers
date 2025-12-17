@@ -5,7 +5,7 @@ lab data acquisition pipelines.
 
 ![c++](https://img.shields.io/badge/C++-00599C?style=flat-square&logo=C%2B%2B&logoColor=white)
 ![license](https://img.shields.io/badge/license-GPLv3-blue)
-___
+---
 
 ## Detailed Description
 
@@ -26,14 +26,14 @@ Sensor is used to monitor most data-acquisition devices, such as torque sensor, 
 timestamp sensor. The Encoder uses hardware interrupt logic to monitor the animal’s movement using a rotary encoder and,
 due to interrupt logic constraints, requires to be segmented into a separate class of microcontrollers. Using this
 combination of microcontrollers maximizes the data acquisition speed while avoiding communication channel overloading.
-Typically, each acquisition system would use at most a single instance of each microcontroller type.
+Typically, each acquisition system uses at most a single instance of each microcontroller type.
 
 This project contains both the schematics for assembling the microcontrollers used in the lab and the code that runs on
 these microcontrollers. The hardware created and programmed as part of this project is designed to be interfaced through
 the bindings available from the [sl-experiment](https://github.com/Sun-Lab-NBB/sl-experiment) library, which is a core
 dependency for every Sun lab project.
 
-___
+---
 
 ## Table of Contents
 
@@ -47,7 +47,7 @@ ___
 - [License](#license)
 - [Acknowledgements](#Acknowledgments)
 
-___
+---
 
 ## Dependencies
 
@@ -62,7 +62,7 @@ These dependencies will be automatically resolved whenever the library is instal
 - [ataraxis-micro-controller](https://github.com/Sun-Lab-NBB/ataraxis-micro-controller)
 - [ataraxis-transport-layer-mc](https://github.com/Sun-Lab-NBB/ataraxis-transport-layer-mc).
 
-___
+---
 
 ## Hardware Assembly
 
@@ -75,7 +75,7 @@ experiment-facilitating devices, used by each data acquisition system. Consult t
 [sl-experiment](https://github.com/Sun-Lab-NBB/sl-experiment) library or previous lab publications for details on
 assembling other data acquisition system components.
 
-___
+---
 
 ## Software Installation
 
@@ -92,21 +92,21 @@ ___
 6. Repeat steps 3 and 4 until all microcontrollers are configured.
 7. Connect all microcontrollers to the PC that will manage the data acquisition runtime (the main data-acquisition PC).
 
-___
+---
 
 ## Usage
 
 Once the microcontrollers are assembled, configured, and connected to the main data acquisition PC, they can be
 accessed via the [sl-experiment](https://github.com/Sun-Lab-NBB/sl-experiment) library.
 
-___
+---
 
 ## API Documentation
 
 See the [API documentation](https://sl-micro-controllers-api-docs.netlify.app/) for the detailed description of
 the methods and classes exposed by this library.
 
-___
+---
 
 ## Versioning
 
