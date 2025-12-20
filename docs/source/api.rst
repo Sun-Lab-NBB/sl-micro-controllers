@@ -35,10 +35,10 @@ TTL Module
 =============
 
 .. doxygenfile:: ttl_module.h
-  :project: sl-micro-controllers
+   :project: sl-micro-controllers
 
 Valve Module
 ============
 
 .. doxygenfile:: valve_module.h
-  :project: sl-micro-controllers
+   :project: sl-micro-controllers

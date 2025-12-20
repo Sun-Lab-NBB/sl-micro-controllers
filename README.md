@@ -1,6 +1,6 @@
 # sl-micro-controllers
 
-This C++ project aggregates the code and documentation for all Ataraxis Micro Controllers (AXMCs) used in Sun (NeuroAI)
+This C++ library aggregates the code and documentation for all Ataraxis Micro Controllers (AXMCs) used in Sun (NeuroAI)
 lab data acquisition pipelines.
 
 ![c++](https://img.shields.io/badge/C++-00599C?style=flat-square&logo=C%2B%2B&logoColor=white)
@@ -11,11 +11,11 @@ lab data acquisition pipelines.
 
 This library builds on top of the general architecture defined by the
 [ataraxis-micro-controller](https://github.com/Sun-Lab-NBB/ataraxis-micro-controller) library to implement the hardware
-modules used by data acquisition systems developed in the Sun lab. This project is explicitly designed and built
+modules used by data acquisition systems developed in the Sun lab. It is explicitly designed and built
 to work with the hardware made and used in the lab, and will likely not work in other contexts without extensive
 modification.
 
-Note; the rest of this ReadMe assumes familiarity with the procedures, experiments, and tools used in the Sun lab
+Note: the rest of this ReadMe assumes familiarity with the procedures, experiments, and tools used in the Sun lab
 to acquire scientific data. See our [publications](https://neuroai.github.io/sunlab/publications) before reading
 further, if you are not familiar with the work done in the lab.
 
@@ -24,12 +24,12 @@ AMC-ACTOR, AMC-SENSOR, and AMC-ENCODER. The Actor is used to interface with the 
 experiment environment, for example, to deliver water, lock running wheel, and activate Virtual Reality screens. The
 Sensor is used to monitor most data-acquisition devices, such as torque sensor, lick sensor, and Mesoscope frame
 timestamp sensor. The Encoder uses hardware interrupt logic to monitor the animal’s movement using a rotary encoder and,
-due to interrupt logic constraints, requires to be segmented into a separate class of microcontrollers. Using this
+due to interrupt logic constraints, needs to be segmented into a separate class of microcontrollers. Using this
 combination of microcontrollers maximizes the data acquisition speed while avoiding communication channel overloading.
 Typically, each acquisition system uses at most a single instance of each microcontroller type.
 
-This project contains both the schematics for assembling the microcontrollers used in the lab and the code that runs on
-these microcontrollers. The hardware created and programmed as part of this project is designed to be interfaced through
+This library contains both the schematics for assembling the microcontrollers used in the lab and the code that runs on
+these microcontrollers. The hardware created and programmed as part of this library is designed to be interfaced through
 the bindings available from the [sl-experiment](https://github.com/Sun-Lab-NBB/sl-experiment) library, which is a core
 dependency for every Sun lab project.
 
@@ -45,21 +45,21 @@ dependency for every Sun lab project.
 - [Versioning](#versioning)
 - [Authors](#authors)
 - [License](#license)
-- [Acknowledgements](#Acknowledgments)
+- [Acknowledgments](#acknowledgments)
 
 ---
 
 ## Dependencies
 
 ### Main Dependency
-- [Platformio](https://platformio.org/install) IDE to upload the code to each microcontroller.
+- [PlatformIO](https://platformio.org/install) IDE to upload the code to each microcontroller.
 
 ### Additional Dependencies
-These dependencies will be automatically resolved whenever the library is installed via Platformio.
+These dependencies will be automatically resolved whenever the library is installed via PlatformIO.
 
 - [digitalWriteFast](https://github.com/ArminJo/digitalWriteFast).
 - [Encoder](https://github.com/PaulStoffregen/Encoder).
-- [ataraxis-micro-controller](https://github.com/Sun-Lab-NBB/ataraxis-micro-controller)
+- [ataraxis-micro-controller](https://github.com/Sun-Lab-NBB/ataraxis-micro-controller).
 - [ataraxis-transport-layer-mc](https://github.com/Sun-Lab-NBB/ataraxis-transport-layer-mc).
 
 ---
@@ -82,14 +82,14 @@ assembling other data acquisition system components.
 1. Download this repository to a local PC with direct USB access to the microcontrollers. Use the latest
    stable release from [GitHub](https://github.com/Sun-Lab-NBB/sl-micro-controllers/releases), as it always
    reflects the current state of our data acquisition hardware.
-2. Open the project in the 'Platformio' IDE.
-3. Optionally disable all hardware modules not used by the target acquisition system. This project is intended to be
+2. Open the project in the 'PlatformIO' IDE.
+3. Optionally disable all hardware modules not used by the target acquisition system. This library is intended to be
    reused by all acquisition systems, so it contains all hardware modules supported in the lab.
 4. Connect a ***single*** microcontroller to the host PC and select the microcontroller type by modifying the
    preprocessor directive on line 26 of the [main.cpp](src/main.cpp). Do ***NOT*** connect more than a single controller
    at a time, as some systems have issues selecting the correct upload target otherwise.
 5. After uploading the code, disconnect the microcontroller from the host-PC and connect the next microcontroller.
-6. Repeat steps 3 and 4 until all microcontrollers are configured.
+6. Repeat steps 4 and 5 until all microcontrollers are configured.
 7. Connect all microcontrollers to the PC that will manage the data acquisition runtime (the main data-acquisition PC).
 
 ---
@@ -110,8 +110,8 @@ the methods and classes exposed by this library.
 
 ## Versioning
 
-This project uses [semantic versioning](https://semver.org/). See the
-[tags on this repository](https://github.com/Sun-Lab-NBB/sl-micro-controllers/tags) for the available project releases.
+This library uses [semantic versioning](https://semver.org/). See the
+[tags on this repository](https://github.com/Sun-Lab-NBB/sl-micro-controllers/tags) for the available releases.
 
 ---
 
@@ -123,7 +123,7 @@ This project uses [semantic versioning](https://semver.org/). See the
 
 ## License
 
-This project is licensed under the GPL3 License: see the [LICENSE](LICENSE) file for details.
+This library is licensed under the GPL3 License: see the [LICENSE](LICENSE) file for details.
 
 ---
 
